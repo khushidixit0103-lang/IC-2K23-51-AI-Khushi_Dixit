@@ -1,0 +1,46 @@
+﻿======================================================================
+   ARTIFICIAL INTELLIGENCE LAB - LAB 3 (EXPERIMENT 4)
+   Feature Engineering & Feature Selection Pipeline
+   Student: Khushi Dixit | Roll No: IC-2K23-51
+======================================================================
+
+1. Ingested Dataset: placement.csv (30 samples)
+
+2. Derived Engineered Features:
+ student_id  cgpa  iq  academic_index  internships  projects  practical_score
+        101   8.5 120           10.20            2         3              8.5
+        102   6.2  95            5.89            0         1              1.5
+        103   9.1 130           11.83            3         4             12.0
+        104   7.4 105            7.77            1         2              5.0
+        105   5.8  90            5.22            0         1              1.5
+
+3. Scaling Comparison (Original vs StandardScaler vs MinMaxScaler):
+   Original  StandardScaled (mu=0, s=1)  MinMaxScaled ([0, 1])
+0     10.20                       0.887                  0.683
+1      5.89                      -0.952                  0.134
+2     11.83                       1.582                  0.890
+3      7.77                      -0.150                  0.373
+4      5.22                      -1.238                  0.048
+
+4. Feature Selection A: Variance Threshold (> 0.1):
+   - cgpa                  : Variance = 1.4089 -> [RETAINED]
+   - iq                    : Variance = 219.0851 -> [RETAINED]
+   - academic_index        : Variance = 5.6827 -> [RETAINED]
+   - practical_score       : Variance = 15.8647 -> [RETAINED]
+   - communication_rating  : Variance = 0.7683 -> [RETAINED]
+
+5. Feature Selection B: SelectKBest (ANOVA F-statistic):
+             Feature  ANOVA F-Score  p-value  Selected (Top 3)
+                cgpa          75.38      0.0              True
+communication_rating          72.56      0.0              True
+     practical_score          59.22      0.0              True
+                  iq          57.50      0.0             False
+      academic_index          56.01      0.0             False
+
+6. Feature Selection C: Mutual Information Scores:
+             Feature  Mutual Information
+communication_rating              0.6519
+      academic_index              0.6436
+     practical_score              0.6377
+                  iq              0.6286
+                cgpa              0.6258
