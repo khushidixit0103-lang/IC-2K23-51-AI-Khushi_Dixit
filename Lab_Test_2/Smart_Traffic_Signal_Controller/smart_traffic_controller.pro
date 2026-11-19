@@ -48,6 +48,7 @@ PREDICATES
     nondeterm print_decision
     nondeterm simulate_next_cycle(road_id)
     nondeterm update_waiting_roads(road_id)
+    nondeterm process_road_update(road_id, road_id, vehicles_cnt, wait_time, density_val, flag_val, flag_val)
     nondeterm display_banner
     nondeterm clear_roads
     nondeterm clear_best
@@ -189,35 +190,30 @@ CLAUSES
     /* ----------------------------------------------------------------------
        PRE-CONFIGURED BENCHMARK SCENARIOS
        ---------------------------------------------------------------------- */
-    /* Sample Scenario: Specified in Assignment Description */
     load_sample_scenario :-
         assertz(road_state(road_a, 15, 5, medium, no, no)),
         assertz(road_state(road_b, 8, 12, medium, yes, no)),
         assertz(road_state(road_c, 25, 3, high, no, no)),
         assertz(road_state(road_d, 5, 7, low, no, no)), !.
 
-    /* Test Case 1: Emergency vehicle present on Road B */
     load_test_case_1 :-
         assertz(road_state(road_a, 15, 5, medium, no, no)),
         assertz(road_state(road_b, 8, 12, medium, yes, no)),
         assertz(road_state(road_c, 25, 3, high, no, no)),
         assertz(road_state(road_d, 5, 7, low, no, no)), !.
 
-    /* Test Case 2: All normal traffic; no emergency vehicles */
     load_test_case_2 :-
         assertz(road_state(road_a, 15, 5, medium, no, no)),
         assertz(road_state(road_b, 8, 12, medium, no, no)),
         assertz(road_state(road_c, 25, 3, high, no, no)),
         assertz(road_state(road_d, 5, 7, low, no, no)), !.
 
-    /* Test Case 3: Blocked road - Road C has accident, must be excluded */
     load_test_case_3 :-
         assertz(road_state(road_a, 15, 5, medium, no, no)),
         assertz(road_state(road_b, 8, 12, medium, no, no)),
         assertz(road_state(road_c, 25, 3, high, no, yes)),
         assertz(road_state(road_d, 5, 7, low, no, no)), !.
 
-    /* Test Case 4: Tie scenario between Road A and Road D */
     load_test_case_4 :-
         assertz(road_state(road_a, 10, 6, medium, no, no)),
         assertz(road_state(road_b, 4, 2, low, no, no)),
@@ -267,7 +263,6 @@ CLAUSES
         evaluate_all_roads,
         print_decision, !.
 
-    /* Print all roads registered in the database */
     print_all_roads :-
         road_state(Road, Veh, Wait, Density, Emerg, Blocked),
         print_single_road(Road, Veh, Wait, Density, Emerg, Blocked),
@@ -281,7 +276,6 @@ CLAUSES
         write(NameStr, " | Veh: ", Veh, " | Wait: ", Wait, "m | Density: ", Density),
         write(" | Emerg: ", Emerg, " | Blocked: ", Blocked, " | Score: ", Score), nl, !.
 
-    /* Iterate through all roads and find the maximum priority candidate */
     evaluate_all_roads :-
         road_state(Road, Veh, Wait, Density, Emerg, Blocked),
         evaluate_and_update(Road, Veh, Wait, Density, Emerg, Blocked),
@@ -289,29 +283,29 @@ CLAUSES
     evaluate_all_roads :- !.
 
     /* ----------------------------------------------------------------------
-       RULE 1 & 2 & 3 & 4 & 5: PRIORITY CALCULATION RULES
+       PRIORITY CALCULATION RULES
        ---------------------------------------------------------------------- */
 
     /* Rule 2: Blocked Road - Absolute exclusion from green signal */
-    calculate_priority(_Road, _Veh, _Wait, _Density, _Emerg, yes, -1, Reason) :-
+    calculate_priority(_, _, _, _, _, yes, -1, Reason) :-
         !,
         Reason = "Road is BLOCKED due to an accident or hazard. Excluded from signal selection.".
 
     /* Rule 1: Emergency Vehicle Priority - Absolute highest priority over normal traffic */
-    calculate_priority(_Road, Veh, Wait, _Density, yes, no, Score, Reason) :-
+    calculate_priority(_, Veh, Wait, _, yes, no, Score, Reason) :-
         !,
         Score = 10000 + (Wait * 10) + Veh,
         Reason = "An emergency vehicle is waiting on this road. The system gives emergency vehicles the highest priority.".
 
     /* Rules 3, 4, 5: Normal Traffic - Weighted combination of density, vehicles, and wait time */
-    calculate_priority(_Road, Veh, Wait, Density, no, no, Score, Reason) :-
+    calculate_priority(_, Veh, Wait, Density, no, no, Score, Reason) :-
         !,
         density_weight(Density, DWeight),
         Score = DWeight + (Veh * 2) + (Wait * 3),
         Reason = "Road selected based on highest combined traffic priority (density weight + vehicle count + wait time).".
 
     /* Fallback for unclassified inputs */
-    calculate_priority(_Road, _Veh, _Wait, _Density, _Emerg, _Blocked, 0, Reason) :-
+    calculate_priority(_, _, _, _, _, _, 0, Reason) :-
         Reason = "Default priority assigned due to unknown or unclassified traffic parameters.".
 
     /* Density Weight Values (Rule 3) */
@@ -325,21 +319,25 @@ CLAUSES
        ---------------------------------------------------------------------- */
     evaluate_and_update(Road, Veh, Wait, Density, Emerg, Blocked) :-
         calculate_priority(Road, Veh, Wait, Density, Emerg, Blocked, Score, Reason),
-        Score > -1, /* Exclude blocked roads (Score = -1) */
-        best_candidate(CurRoad, CurScore, CurWait, CurVeh, _),
-        (CurRoad = none ; is_better(Score, Wait, Veh, Road, CurScore, CurWait, CurVeh, CurRoad)),
+        Score > -1,
+        best_candidate(none, _, _, _, _),
         !,
         retract(best_candidate(_, _, _, _, _)),
         assertz(best_candidate(Road, Score, Wait, Veh, Reason)).
+
+    evaluate_and_update(Road, Veh, Wait, Density, Emerg, Blocked) :-
+        calculate_priority(Road, Veh, Wait, Density, Emerg, Blocked, Score, Reason),
+        Score > -1,
+        best_candidate(CurRoad, CurScore, CurWait, CurVeh, _),
+        is_better(Score, Wait, Veh, Road, CurScore, CurWait, CurVeh, CurRoad),
+        !,
+        retract(best_candidate(_, _, _, _, _)),
+        assertz(best_candidate(Road, Score, Wait, Veh, Reason)).
+
     evaluate_and_update(_, _, _, _, _, _) :- !.
 
     /* ----------------------------------------------------------------------
        RULE 6: EQUAL PRIORITY AND TIE-BREAKING LOGIC
-       Hierarchy:
-       1. Higher Priority Score
-       2. Longer Waiting Time (Starvation prevention)
-       3. Higher Number of Waiting Vehicles
-       4. Lower Road Identifier (Road A < Road B < Road C < Road D)
        ---------------------------------------------------------------------- */
     is_better(Score1, _, _, _, Score2, _, _, _) :-
         Score1 > Score2, !.
@@ -371,7 +369,7 @@ CLAUSES
     road_display_name(road_c, "Road C") :- !.
     road_display_name(road_d, "Road D") :- !.
     road_display_name(none, "None") :- !.
-    road_display_name(Other, "Road Unknown").
+    road_display_name(_, "Road Unknown").
 
     /* ----------------------------------------------------------------------
        OUTPUT DISPLAY
@@ -426,23 +424,13 @@ CLAUSES
     update_waiting_roads(GreenRoad) :-
         road_state(Road, Veh, Wait, Density, Emerg, Blocked),
         retract(road_state(Road, Veh, Wait, Density, Emerg, Blocked)),
-        (
-            Road = GreenRoad ->
-                /* Winner clears vehicles and emergency */
-                NewVeh = 0,
-                NewWait = 0,
-                NewEmerg = no,
-                assertz(road_state(Road, NewVeh, NewWait, low, NewEmerg, Blocked))
-            ;
-                /* Non-selected roads accumulate wait time */
-                NewWait = Wait + 3,
-                assertz(road_state(Road, Veh, NewWait, Density, Emerg, Blocked))
-        ),
+        process_road_update(GreenRoad, Road, Veh, Wait, Density, Emerg, Blocked),
         fail.
     update_waiting_roads(_) :- !.
 
-/* ==========================================================================
-   OPTIONAL TURBO PROLOG DIRECT EXECUTION GOAL
-   Uncomment the line below when compiling to standalone executable in Turbo Prolog:
-   GOAL start.
-   ========================================================================== */
+    process_road_update(GreenRoad, GreenRoad, _, _, _, _, Blocked) :-
+        !,
+        assertz(road_state(GreenRoad, 0, 0, low, no, Blocked)).
+    process_road_update(_, Road, Veh, Wait, Density, Emerg, Blocked) :-
+        NewWait = Wait + 3,
+        assertz(road_state(Road, Veh, NewWait, Density, Emerg, Blocked)).
