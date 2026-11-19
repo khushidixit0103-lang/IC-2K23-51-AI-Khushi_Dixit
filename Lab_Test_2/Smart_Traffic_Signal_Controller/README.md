@@ -11,20 +11,10 @@
 
 ## 📹 Demo Video
 
-> **IMPORTANT SUBMISSION REQUIREMENT:**  
-> As instructed by the faculty, this section contains the placeholder for the video demonstration of this practical implementation.
-
 * **Student Name:** Khushi Dixit
 * **Roll Number:** 51 (IC-2K23-51)
-* **Assigned Problem:** Set 1 – Smart Traffic Signal Controller (Turbo Prolog Expert System)
-* **Video Demonstration URL:** `[PASTE YOUR DEMO VIDEO LINK HERE]`
-
-### 📌 Instructions for Video Submission
-1. Record your screen while walking through the source code structure (`smart_traffic_controller.pro`), explaining facts, predicates, and priority assignment rules.
-2. Demonstrate the execution of the program covering all test scenarios (Emergency Priority, Normal Peak Traffic, Blocked Road Accident Exclusion, and Equal Priority Tie-breaking).
-3. Upload the MP4 recording to **Google Drive** or **YouTube (as Unlisted)**.
-4. If using Google Drive, ensure file sharing is configured to: `Anyone with the link – Viewer`.
-5. Edit this `README.md` and replace `[PASTE YOUR DEMO VIDEO LINK HERE]` with your shareable link.
+* **Assigned Problem:** Set 1 – Smart Traffic Signal Controller
+* **YouTube Video Link (Unlisted):** [PASTE YOUR UNLISTED YOUTUBE VIDEO LINK HERE]
 
 ---
 

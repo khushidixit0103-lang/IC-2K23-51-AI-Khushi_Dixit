@@ -22,25 +22,18 @@ Unlike untyped Edinburgh/ISO Prolog (such as SWI-Prolog or GNU Prolog), **Borlan
 
 ## 🧩 2. Domains & Data Representations
 
-In `smart_traffic_controller.pro`, the domains are declared as:
+In `smart_traffic_controller.pro`, user-defined domains and standard types are declared as:
 
 ```prolog
 DOMAINS
-    road_id      = symbol    /* e.g., road_a, road_b, road_c, road_d */
-    density_val  = symbol    /* e.g., low, medium, high */
-    flag_val     = symbol    /* e.g., yes, no */
-    reason_str   = string    /* Human-readable explanation */
-    vehicles_cnt = integer   /* Count of waiting vehicles (0 - 32767) */
-    wait_time    = integer   /* Elapsed waiting duration in minutes */
-    score_val    = integer   /* Computed priority score */
+    road_id = symbol    /* e.g., road_a, road_b, road_c, road_d */
 ```
 
-### Purpose of Each Domain:
-- `road_id`: Unique symbolic identifier for each intersection branch.
-- `density_val`: Categorical representation of vehicle concentration (`low`, `medium`, `high`).
-- `flag_val`: Binary boolean flags for emergency and blockage conditions (`yes`, `no`).
-- `reason_str`: Stores natural-language justification for explainable AI outputs.
-- `vehicles_cnt`, `wait_time`, `score_val`: Standard signed 16-bit integers used in mathematical evaluations.
+### Types Used:
+- `road_id`: Unique symbolic identifier for each intersection branch (`road_a`, `road_b`, `road_c`, `road_d`).
+- `symbol`: Categorical values (`low`, `medium`, `high`, `yes`, `no`).
+- `string`: Stores natural-language justification for explainable AI outputs.
+- `integer`: Standard signed 16-bit integers used directly in arithmetic evaluations and score calculations.
 
 ---
 
