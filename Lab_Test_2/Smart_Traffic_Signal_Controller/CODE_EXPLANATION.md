@@ -188,37 +188,16 @@ simulate_next_cycle(GreenRoad) :-
 update_waiting_roads(GreenRoad) :-
     road_state(Road, Veh, Wait, Density, Emerg, Blocked),
     retract(road_state(Road, Veh, Wait, Density, Emerg, Blocked)),
-    (
-        Road = GreenRoad ->
-            /* The winning road clears its queue */
-            NewVeh = 0, NewWait = 0, NewEmerg = no,
-            assertz(road_state(Road, NewVeh, NewWait, low, NewEmerg, Blocked))
-        ;
-            /* Non-selected roads accumulate wait time (+3 min) */
-            NewWait = Wait + 3,
-            assertz(road_state(Road, Veh, NewWait, Density, Emerg, Blocked))
-    ),
+    process_road_update(GreenRoad, Road, Veh, Wait, Density, Emerg, Blocked),
     fail.
 update_waiting_roads(_) :- !.
+
+process_road_update(GreenRoad, GreenRoad, _, _, _, _, Blocked) :-
+    !,
+    assertz(road_state(GreenRoad, 0, 0, low, no, Blocked)).
+process_road_update(_, Road, Veh, Wait, Density, Emerg, Blocked) :-
+    NewWait = Wait + 3,
+    assertz(road_state(Road, Veh, NewWait, Density, Emerg, Blocked)).
 ```
 
 Every unserved cycle adds $+3$ minutes ($+9$ priority points) to idling roads, guaranteeing that even low-density roads eventually overtake previously green roads.
-
----
-
-## 🎤 9. Viva Voce Preparation Guide (Questions & Answers)
-
-### Q1: Why use Prolog for a Traffic Signal Controller instead of C++ or Python?
-> **Answer:** Prolog is a declarative logic programming language inherently suited for **knowledge-based and expert systems**. Instead of writing complex nested `if-else` trees, Prolog allows us to define relationships, constraints, and Horn clauses. The inference engine automatically performs pattern matching and conflict resolution, making rules easily maintainable, mathematically verifiable, and explainable.
-
-### Q2: How is an emergency vehicle guaranteed priority over high normal traffic?
-> **Answer:** Through Rule 1 in `calculate_priority/8`. An emergency vehicle is assigned a base score of $10,000$ points. The maximum possible normal traffic score (even with $100$ vehicles and $30$ minutes wait) is typically under $500$. Thus, emergency vehicles mathematically dominate the candidate space.
-
-### Q3: What happens if two emergency vehicles arrive on different roads at the same time?
-> **Answer:** The formula incorporates waiting time and queue length: $\text{Score} = 10000 + (10 \times \text{Wait}) + \text{Vehicles}$. The emergency vehicle that has been waiting longer will have a higher score. If both waiting times are identical, the vehicle count breaks the tie; if still identical, canonical road rank resolves it deterministically.
-
-### Q4: Why is a blocked road assigned a score of -1?
-> **Answer:** A blocked road indicates a hazardous condition (e.g., collision, tree fall, construction). Assigning $-1$ flags it as strictly ineligible. The predicate `evaluate_and_update/6` enforces `Score > -1`, completely filtering it out of the candidate pool.
-
-### Q5: How do you prevent starvation of low-density roads?
-> **Answer:** Every minute of waiting time adds $+3$ points to a road's score ($3 \times \text{Wait}$). Furthermore, in multi-cycle simulations, roads that stay on RED increment their wait time by $+3$ minutes per cycle ($+9$ points), while the green road resets to $0$. Over successive cycles, the accumulated waiting score guarantees that low-density roads eventually get served.
