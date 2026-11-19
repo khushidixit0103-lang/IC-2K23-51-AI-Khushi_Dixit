@@ -11,17 +11,11 @@
    ========================================================================== */
 
 DOMAINS
-    road_id      = symbol
-    density_val  = symbol
-    flag_val     = symbol
-    reason_str   = string
-    vehicles_cnt = integer
-    wait_time    = integer
-    score_val    = integer
+    road_id = symbol
 
 DATABASE - traffic_db
-    road_state(road_id, vehicles_cnt, wait_time, density_val, flag_val, flag_val)
-    best_candidate(road_id, score_val, wait_time, vehicles_cnt, reason_str)
+    road_state(road_id, integer, integer, symbol, symbol, symbol)
+    best_candidate(road_id, integer, integer, integer, string)
 
 PREDICATES
     nondeterm start
@@ -37,18 +31,18 @@ PREDICATES
     nondeterm input_single_road(road_id)
     nondeterm solve_traffic
     nondeterm evaluate_all_roads
-    nondeterm evaluate_and_update(road_id, vehicles_cnt, wait_time, density_val, flag_val, flag_val)
-    nondeterm calculate_priority(road_id, vehicles_cnt, wait_time, density_val, flag_val, flag_val, score_val, reason_str)
-    nondeterm density_weight(density_val, integer)
-    nondeterm is_better(score_val, wait_time, vehicles_cnt, road_id, score_val, wait_time, vehicles_cnt, road_id)
+    nondeterm evaluate_and_update(road_id, integer, integer, symbol, symbol, symbol)
+    nondeterm calculate_priority(road_id, integer, integer, symbol, symbol, symbol, integer, string)
+    nondeterm density_weight(symbol, integer)
+    nondeterm is_better(integer, integer, integer, road_id, integer, integer, integer, road_id)
     nondeterm road_rank(road_id, integer)
     nondeterm road_display_name(road_id, string)
     nondeterm print_all_roads
-    nondeterm print_single_road(road_id, vehicles_cnt, wait_time, density_val, flag_val, flag_val)
+    nondeterm print_single_road(road_id, integer, integer, symbol, symbol, symbol)
     nondeterm print_decision
     nondeterm simulate_next_cycle(road_id)
     nondeterm update_waiting_roads(road_id)
-    nondeterm process_road_update(road_id, road_id, vehicles_cnt, wait_time, density_val, flag_val, flag_val)
+    nondeterm process_road_update(road_id, road_id, integer, integer, symbol, symbol, symbol)
     nondeterm display_banner
     nondeterm clear_roads
     nondeterm clear_best
@@ -119,7 +113,7 @@ CLAUSES
         !,
         run_simulation(sample),
         best_candidate(WinnerRoad, _, _, _, _),
-        WinnerRoad <> none,
+        not(WinnerRoad = none),
         write(">> Simulating next cycle: Advancing wait time for RED signals..."), nl,
         simulate_next_cycle(WinnerRoad),
         main_menu.
@@ -283,7 +277,7 @@ CLAUSES
     evaluate_all_roads :- !.
 
     /* ----------------------------------------------------------------------
-       PRIORITY CALCULATION RULES
+       RULE 1 & 2 & 3 & 4 & 5: PRIORITY CALCULATION RULES
        ---------------------------------------------------------------------- */
 
     /* Rule 2: Blocked Road - Absolute exclusion from green signal */
